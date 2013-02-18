@@ -19,17 +19,18 @@ requirements:
     running:
         ubuntu:
             - subversion
-mem: 512M
+mem: 4096M
 instances: 1
 processes:
     web: ~
 env:
     https_proxy: $http_proxy
     LD_LIBRARY_PATH: $STACKATO_DOCUMENT_ROOT/dxr/trilite
-#command: ./build.sh
-command: ./index-dxr.sh --hang
+command: ./build.sh --hang
+#command: ./index-dxr.sh --hang
 cron:
-    - "@daily $STACKATO_DOCUMENT_ROOT/index-dxr.sh"
+#    - "@daily $STACKATO_DOCUMENT_ROOT/index-dxr.sh"
+    - "@daily $STACKATO_DOCUMENT_ROOT/build.sh"
 hooks:
     pre-staging:
         # Don't use alternates in the VM, they don't exist

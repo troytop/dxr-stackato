@@ -2,8 +2,6 @@
 
 set -e
 
-export all_proxy=$http_proxy
-export https_proxy=$http_proxy
 APP_DIR="${STACKATO_DOCUMENT_ROOT}"
 OUT_DIR="${APP_DIR}/build-root"
 KOMODO_DIR="${OUT_DIR}/komodo"
@@ -27,12 +25,10 @@ MOZILLA_DIR="${KOMODO_DIR}/mozilla/build/$(cd ${KOMODO_DIR}/mozilla && python -c
 MOZ_OBJ_DIR="${MOZILLA_DIR}/obj-release"
 [ -d "${MOZ_OBJ_DIR}" ] || mkdir -p "${MOZ_OBJ_DIR}"
 
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${STACKATO_DOCUMENT_ROOT}/dxr/trilite/"
-
 cat >"${OUT_DIR}/dxr.config" <<-EOF
 
 	[DXR]
-	target_folder       = ${STACKATO_FILESYSTEM}
+	target_folder       = ${STACKATO_FILESYSTEM_DXR_KOMODO_WWW}
 	nb_jobs             = 2
 	temp_folder         = ${OUT_DIR}/temp
 	log_folder          = ${OUT_DIR}/logs
@@ -82,3 +78,11 @@ cat >"${OUT_DIR}/dxr.config" <<-EOF
 	EOF
 
 dxr-build.py -f "${OUT_DIR}/dxr.config"
+echo Done.
+
+#  Prevent stackato from restarting this
+if [ "$1" == "--hang" ] ; then
+    while true; do
+        sleep 3650d
+    done
+fi
