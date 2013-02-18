@@ -1,0 +1,56 @@
+name: dxr-komodo-server
+framework:
+    type: python
+    runtime: python27
+    start-file: dxr/dxr/dxr.wsgi
+services:
+    dxr-komodo-www: filesystem
+    ${name}-cache: filesystem
+requirements:
+    staging:
+        ubuntu:
+            - mercurial
+            - git
+            - python-pip
+            - python2.7-dev
+    running:
+        ubuntu:
+            - mercurial
+            - subversion
+url:
+    - ${name}
+env:
+    DXR_FOLDER: $STACKATO_FILESYSTEM_DXR_KOMODO_WWW
+    LD_LIBRARY_PATH: $STACKATO_DOCUMENT_ROOT/dxr/trilite
+    https_proxy: $http_proxy
+processes:
+    web:
+        uwsgi --reaper --vacuum --master --processes 1 --single-interpreter
+        --enable-threads --http-socket=0.0.0.0:$VCAP_APP_PORT
+        $STACKATO_START_FILE
+mem: 200M
+instances: 1
+hooks:
+    pre-staging:
+        # Don't use alternates in the VM, they don't exist
+        - rm -f dxr/.git/objects/info/alternates
+        # Force use of https: to fetch trilite (otherwise the proxy doesn't work?)
+        - git config --file dxr/.gitmodules --replace-all submodule.trilite.url
+            $(git config --file dxr/.gitmodules --get submodule.trilite.url |
+                sed s@git:@https:@)
+        - /usr/bin/pip install --user setuptools_git
+        - /usr/bin/pip install --user uwsgi
+        - /usr/bin/pip install --user --requirement=dxr/requirements.txt
+    post-staging:
+        - cd dxr && git submodule init
+        - cd dxr && git submodule update
+        - make -C dxr PLUGINS=
+        #- virtualenv --system-site-packages --distribute --extra-search-dir=$PYTHONUSERBASE venv
+        #- virtualenv --relocatable venv
+        #- source venv/bin/activate ; cd dxr ; https_proxy=$http_proxy python setup.py install
+        - echo $PYTHONUSERBASE/$(python -c 'import sys; print "lib/python%s.%s/site-packages" % sys.version_info[:2]')
+        - mkdir -p $PYTHONUSERBASE/$(python -c 'import sys; print "lib/python%s.%s/site-packages" % sys.version_info[:2]')
+        - cd dxr ; /usr/bin/python setup.py build --debug
+        - cd dxr ; /usr/bin/python setup.py install --user --skip-build
+
+# vim: set et ts=4 :

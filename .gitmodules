@@ -1,0 +1,3 @@
+[submodule "dxr"]
+	path = dxr
+	url = git://github.com/mozilla/dxr.git

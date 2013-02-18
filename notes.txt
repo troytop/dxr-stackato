@@ -1,0 +1,39 @@
+SETUP INSTRUCTIONS
+    - Get Stackato microcloud VM (currently 2.6.7)
+    - Add user to sudoers
+    - Set up apt-cache-ng on the VM
+    - Edit /lxc/template/rootfs/etc/apt.conf.d/ to use apt-cache ng (host 192.168.3.1)
+    - Edit /etc/apt-cacher-ng/acng.conf to cache everything (incl. volatile)
+    - Install and remove python2.7-dev on VM to prime apt-cacher-ng cache
+    - Edit /s/vcap/staging/lib/vcap/staging/plugin/common.rb to use $http_proxy for
+        https_proxy on add-apt-repository
+
+STACKATO NOTES
+
+- Need to add add-apt-repository to sudoers
+    - otherwise it fails to install the PGP key
+- Need to set https_proxy for add-apt-repository
+    - otherwise it silently hangs trying to connect
+    - really, just lots of things need https_proxy
+    - git:// won't work
+- using virtualbox:
+    - `stackato ssh app-name` only works from within `stackato ssh api`
+        - seems to be a problem with virtualbox + bridged + same machine
+        - works better with a second NIC on the same subnet
+- can't reach VM using KVM from the same NIC
+    - `stackato ssh app-name` seems to work... (separate NIC)
+
+- binding the filesystem service sometimes errors out:
+    Binding service [dxr-komodo-www]: Error 503: Unexpected response from service gateway. Please contact your cloud administrator.
+    - logs claim to be gateway timed out
+    - likely has something to do with load and/or number of running apps?
+
+- assuming people develop on microcloud, seems useful to set up apt-cacher-ng
+    - (this is probably not useful for non-micro instances)
+    - pretty consistently dies without if you want to install pthon27-dev
+    - need to hack apt-cacher-ng to cache indexes too (apt-get update)
+
+- ActivePython 2.7 links against libsqlite statically
+    - breaks sqlite extensions (fails to register, loads a different sqlite instead)
+    - seems even more broken with uwsgi, which loads system sqlite
+
